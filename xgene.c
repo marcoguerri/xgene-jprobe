@@ -5,24 +5,25 @@
 #include <linux/kprobes.h>
 #include <linux/printk.h>
 #include <linux/errno.h>
+#include <linux/string.h>
+#include <asm/page.h>
+
+#include "crc.h"
 
 #include "xgene_enet_main.h"
 #include "xgene_enet_hw.h"
 #include "xgene_enet_sgmac.h"
 #include "xgene_enet_xgmac.h"
 
-static int done = 0;
 static int xgene_enet_rx_frame_probe(struct xgene_enet_desc_ring *rx_ring,
                                      struct xgene_enet_raw_desc *raw_desc) 
 {
         u32 skb_index, datalen;
+        u32 i,j;
         u8 status;
         struct sk_buff *skb;
         struct xgene_enet_desc_ring *buf_pool;
 
-        printk("Calling probe function\n");
-        if(done == 1)
-            jprobe_return();
        
         /* Get the buffer pool from the current ring */
         buf_pool = rx_ring->buf_pool;
@@ -42,11 +43,21 @@ static int xgene_enet_rx_frame_probe(struct xgene_enet_desc_ring *rx_ring,
         /* Get buffer lenght from raw_descriptor */
         datalen = GET_VAL(BUFDATALEN, le64_to_cpu(raw_desc->m1));
         datalen = (datalen & DATALEN_MASK);
+        
+        /* Verifying FCS only for non-paged sk_buff and returning the physical address
+         * of the buffer */
+        if(!skb_is_nonlinear(skb)) 
+        {
+            u32 crc32_compare = crc32_ethernet(crc32_fast(skb->data, datalen-4));
+            if(crc32_compare != *((u32*)(skb->data+datalen-4))){
+                printk("Calculated CRC is %x,  CRC in frame is %x, phys: %016llx, %016llx\n", 
+               crc32_compare, 
+               *((u32*)(skb->data+datalen-4)), 
+                       virt_to_phys(skb->data), 
+                       __pa(skb->data));
+            }
+        }
 
-        /* Trying to read datalen from skb->data? This will work only if skb is not paged? */
-        printk("CRC is %x\n", *((u32*)(skb->data+datalen-4)));
-
-        done = 1;
 out:
         jprobe_return();
         return 0;

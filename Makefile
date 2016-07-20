@@ -11,9 +11,11 @@ all:
 	make -C $(KERNEL_HEADERS) M=$(PWD) modules
 
 $(LIBCRC_DIR)/libcrc.a: 
+	[[ "$(ARCH)" != "" ]] || (echo "Building outside Kbuild requires ARCH to be set manually" && exit 1)
+
 	# Not relying on Kbuild, need to define include paths manually via EXTRA_CFLAGS.
 	# isystem is evaluated after -I and before default system include paths
-
+	#
 	make -C $(LIBCRC_DIR) libcrc.a \
 	EXTRA_CFLAGS="-D__KERNEL__ -isystem $(KERNEL_HEADERS)/include -isystem $(KERNEL_HEADERS)/arch/$(ARCH)/include"
 

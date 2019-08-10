@@ -9,7 +9,7 @@
 #include <linux/string.h>
 #include <asm/page.h>
 
-#include "libcrc/crc.h"
+#include "crc.h"
 
 #include "xgene_enet_main.h"
 #include "xgene_enet_hw.h"

@@ -4,7 +4,7 @@ xgene_probe-objs := xgene.o libcrc/libcrc.a
 LIBCRC_DIR = $(PWD)/libcrc
 KERNEL_HEADERS = /lib/modules/$(shell uname -r)/build
 
-CFLAGS_xgene.o := -I$(KERNEL_HEADERS)/drivers/net/ethernet/apm/xgene
+CFLAGS_xgene.o := -I$(KERNEL_HEADERS)/drivers/net/ethernet/apm/xgene -I$(LIBCRC_DIR)/src
 LDFLAGS_xgene_probe.o += -L$(LIBCRC_DIR)/libcrc
 
 all:
